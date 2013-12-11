@@ -64,18 +64,10 @@
     }
 
     EField.prototype.render = function($el) {
-      var _this = this;
       this.bglayer = $(tpl);
       $('body').append(this.bglayer);
       this.toplayer = $('<svg style="position:absolute; top:0px; left:100px;" width=' + WIDTH + ' height=' + HEIGHT + '></svg>');
-      $('body').append(this.toplayer);
-      return this.toplayer.click(function(e) {
-        if (e.shiftKey) {
-          return _this.addStationaryCharge(e.offsetX, e.offsetY);
-        } else {
-          return _this.addPointCharge(e.offsetX, e.offsetY);
-        }
-      });
+      return $('body').append(this.toplayer);
     };
 
     EField.prototype.drawArrows = function() {
@@ -152,15 +144,6 @@
       }, 1000 / 40);
     };
 
-    EField.prototype.addCircleOfCharges = function(num, r, x, y) {
-      var i, _i;
-      for (i = _i = 1; 1 <= num ? _i <= num : _i >= num; i = 1 <= num ? ++_i : --_i) {
-        this.addStationaryCharge(x + Math.sin(i * 360 / num * Math.PI / 180) * r, y + Math.cos(i * 360 / num * Math.PI / 180) * r);
-        this.addStationaryCharge(x - Math.sin(i * 360 / num * Math.PI / 180) * r, y + Math.cos(i * 360 / num * Math.PI / 180) * r);
-      }
-      return this._updateArrows();
-    };
-
     EField.prototype._updateArrows = function() {
       var _this = this;
       return _.each(this.arrows, function(arrow) {
@@ -190,7 +173,5 @@
   })();
 
   window.EField = EField;
-
-  console.log('loaded');
 
 }).call(this);

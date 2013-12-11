@@ -49,11 +49,6 @@ class EField
     # create interactive svg layer
     @toplayer = $('<svg style="position:absolute; top:0px; left:100px;" width=' + WIDTH + ' height=' + HEIGHT + '></svg>')
     $('body').append(@toplayer)
-    @toplayer.click (e) =>
-      if e.shiftKey
-        @addStationaryCharge(e.offsetX, e.offsetY)
-      else
-        @addPointCharge(e.offsetX, e.offsetY)
     
   drawArrows: ->
     @arrows = []
@@ -101,12 +96,6 @@ class EField
       circle.setAttribute('cy', electron.y)
     , 1000/40)
 
-  addCircleOfCharges: (num, r, x, y) ->
-    for i in [1..num]
-      @addStationaryCharge x+Math.sin(i*360/num*Math.PI/180)*r, y+Math.cos(i*360/num*Math.PI/180)*r
-      @addStationaryCharge x-Math.sin(i*360/num*Math.PI/180)*r, y+Math.cos(i*360/num*Math.PI/180)*r
-    @_updateArrows()
-
   _updateArrows: ->
     _.each @arrows, (arrow) =>
       Dx = 0
@@ -127,4 +116,3 @@ class EField
 
 # throw things on window for now
 window.EField = EField
-console.log 'loaded'
