@@ -1,14 +1,3 @@
-WIDTH = 730
-HEIGHT = 600
-
-tpl = """
-  <svg width=#{WIDTH} height=#{HEIGHT} style="position:absolute; top:0px; left:100px;">
-    <marker id="triangle" viewBox="0 0 10 10" refX="0" refY="5"
-                markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" />
-    </marker>
-  </svg>
-"""
 
 class Arrow
 
@@ -32,34 +21,68 @@ class Arrow
     @line.setAttribute "opacity", opacity
 
 class Charge
+  # x, y, charge, mass
 
-  constructor: (@x, @y, @coulombs = 1) -> #
+  constructor: (@x, @y, @charge = 1, @mass = 1) ->
+    @circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+    # defaults
+    attrs = 
+      'cx':@x, 'cy':@y,
+      'r': 10
+      'fill': 'red'
+      'stroke': 'none'
+    _.map attrs,
+      (v,k) => @setAttribute(k, v)
+
+  setAttribute: (k,v) ->
+    @circle.setAttribute(k,v)
+
+  x: (@x) ->
+    circle.setAttribute('cx', @x)
+
+  y: (@y) ->
+    circle.setAttribute('cy', @y)
 
 class EField
 
-  constructor: (@gridRes = 20) ->
+  constructor: (options = {}) ->
+    @WIDTH = options.width || 730 # because fuck 725 (indeed)
+    @HEIGHT = options.width || 600
+    @gridRes = options.gridResolution || 20
     # keep a reference to the charges in this field
     @charges = []
 
   render: ($el) ->
     # create bg canvas, non-interactive things go here
+    tpl = """
+      <svg width=#{@WIDTH} height=#{@HEIGHT} style="position:absolute; top:0px; left:100px;">
+        <marker id="triangle" viewBox="0 0 10 10" refX="0" refY="5"
+                    markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" />
+        </marker>
+      </svg>
+    """
     @bglayer = $(tpl)
     $('body').append(@bglayer)
 
     # create interactive svg layer
-    @toplayer = $('<svg style="position:absolute; top:0px; left:100px;" width=' + WIDTH + ' height=' + HEIGHT + '></svg>')
+    @toplayer = $('<svg style="position:absolute; top:0px; left:100px;" width=' + @WIDTH + ' height=' + @HEIGHT + '></svg>')
     $('body').append(@toplayer)
     
   drawArrows: ->
     @arrows = []
-    m = Math.floor(WIDTH/@gridRes)
-    n = Math.floor(HEIGHT/@gridRes)
+    m = Math.floor(@WIDTH/@gridRes)
+    n = Math.floor(@HEIGHT/@gridRes)
     for i in [1..m]
       for j in [1..n]
         arrow = new Arrow(i*@gridRes, j*@gridRes)
         @bglayer.append arrow.makeLine()
         @arrows.push arrow
     @_updateArrows()
+
+  addCharge: (charge) ->
+    @charges.push(charge)
+    @toplayer.append(charge.circle)
 
   # Charge with infinite mass
   addStationaryCharge: (x, y) ->
@@ -113,6 +136,9 @@ class EField
       arrow.setVector(angle)
       arrow.opacity magnitude
 
+  _tick: ->
+
 
 # throw things on window for now
 window.EField = EField
+window.Charge = Charge

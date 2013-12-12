@@ -1,6 +1,9 @@
 
+# instantiate and render into div
 eField = new EField()
 eField.render($('#gauss'))
+
+# set view method
 eField.drawArrows()
 
 # add a circle of charges
@@ -15,7 +18,7 @@ for i in [1..num]
   eField.addStationaryCharge x-xi, y+yi
 
 # add event listener to top interactive layer
-eField.toplayer.click (e) =>
+eField.toplayer.click (e) ->
   if e.shiftKey
     eField.addStationaryCharge(e.offsetX, e.offsetY)
   else
