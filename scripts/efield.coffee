@@ -9,13 +9,14 @@ class Arrow
       'x1':@x, 'y1':@y, 'x2':@x, 'y2':@y+8,
       'stroke':'black' 
       'stroke-width':'1.5' 
-      'marker-end':'url(#triangle)'
+      'marker-start':'url(#triangle)'
     _.map attrs,
       (v,k) => @line.setAttribute(k, v)
     return @line
 
   setVector: (@angle) ->
-    @line.setAttribute "transform", "rotate(#{@angle}, #{@x}, #{@y})"
+    a=@angle+180
+    @line.setAttribute "transform", "rotate(#{a}, #{@x}, #{@y})"
     
   opacity: (opacity) ->
     @line.setAttribute "opacity", opacity
@@ -57,9 +58,9 @@ class EField
     # create bg canvas, non-interactive things go here
     tpl = """
       <svg width=#{@WIDTH} height=#{@HEIGHT} style="position:relative; top:0px; left:0px;">
-        <marker id="triangle" viewBox="0 0 10 10" refX="0" refY="5"
+        <marker id="triangle" viewBox="-10 0 10 10" refX="-5" refY="5"
                     markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" />
+          <path d="M 0 0 L -10 5 L 0 10 z" />
         </marker>
       </svg>
     """
@@ -102,6 +103,7 @@ class EField
     @toplayer.append(electron.circle)
     _.map { 'r':4, 'fill':'blue' },
       (v,k) -> electron.setAttribute(k, v)
+
 
   ####################
   # Animation controls
