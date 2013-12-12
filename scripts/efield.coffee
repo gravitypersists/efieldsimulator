@@ -38,24 +38,23 @@ class Charge
     @circle.setAttribute(k,v)
 
   x: (@x) ->
-    circle.setAttribute('cx', @x)
+    @circle.setAttribute('cx', @x)
 
   y: (@y) ->
-    circle.setAttribute('cy', @y)
+    @circle.setAttribute('cy', @y)
 
 class EField
 
   constructor: (options = {}) ->
     @WIDTH = options.width || 730 # because fuck 725 (indeed)
     @HEIGHT = options.width || 600
-    @gridRes = options.gridResolution || 20
-    # keep a reference to the charges in this field
     @charges = []
+    @arrows = []
 
   render: ($el) ->
     # create bg canvas, non-interactive things go here
     tpl = """
-      <svg width=#{@WIDTH} height=#{@HEIGHT} style="position:absolute; top:0px; left:100px;">
+      <svg width=#{@WIDTH} height=#{@HEIGHT} style="position:relative; top:0px; left:0px;">
         <marker id="triangle" viewBox="0 0 10 10" refX="0" refY="5"
                     markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
           <path d="M 0 0 L 10 5 L 0 10 z" />
@@ -63,21 +62,24 @@ class EField
       </svg>
     """
     @bglayer = $(tpl)
-    $('body').append(@bglayer)
+    $el.append(@bglayer)
 
-    # create interactive svg layer
-    @toplayer = $('<svg style="position:absolute; top:0px; left:100px;" width=' + @WIDTH + ' height=' + @HEIGHT + '></svg>')
-    $('body').append(@toplayer)
+    # create interactive svg layer (any drawn object that is clickable)
+    @toplayer = $('<svg style="position:absolute; top:0px; left:0px;" width=' + @WIDTH + ' height=' + @HEIGHT + '></svg>')
+    $el.append(@toplayer)
     
-  drawArrows: ->
-    @arrows = []
+  drawArrows: (@gridRes = 20) ->
     m = Math.floor(@WIDTH/@gridRes)
     n = Math.floor(@HEIGHT/@gridRes)
     for i in [1..m]
       for j in [1..n]
-        arrow = new Arrow(i*@gridRes, j*@gridRes)
-        @bglayer.append arrow.makeLine()
-        @arrows.push arrow
+        @drawFieldArrow(i*@gridRes, j*@gridRes)
+    @_updateArrows()
+
+  drawFieldArrow: (x, y) ->
+    arrow = new Arrow x, y
+    @bglayer.append arrow.makeLine()
+    @arrows.push arrow
     @_updateArrows()
 
   addCharge: (charge) ->
@@ -119,6 +121,8 @@ class EField
       circle.setAttribute('cy', electron.y)
     , 1000/40)
 
+  _tick: ->
+
   _updateArrows: ->
     _.each @arrows, (arrow) =>
       Dx = 0
@@ -136,7 +140,7 @@ class EField
       arrow.setVector(angle)
       arrow.opacity magnitude
 
-  _tick: ->
+  
 
 
 # throw things on window for now
