@@ -24,6 +24,8 @@ class Charge
   # x, y, charge, mass
 
   constructor: (@x, @y, @charge = 1, @mass = 1) ->
+    @vx = 0
+    @vy = 0
     @circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
     # defaults
     attrs = 
@@ -37,17 +39,17 @@ class Charge
   setAttribute: (k,v) ->
     @circle.setAttribute(k,v)
 
-  x: (@x) ->
+  setx: (@x) ->
     @circle.setAttribute('cx', @x)
 
-  y: (@y) ->
+  sety: (@y) ->
     @circle.setAttribute('cy', @y)
 
 class EField
 
   constructor: (options = {}) ->
     @WIDTH = options.width || 730 # because fuck 725 (indeed)
-    @HEIGHT = options.width || 600
+    @HEIGHT = options.height || 600
     @charges = []
     @arrows = []
 
@@ -87,41 +89,58 @@ class EField
     @toplayer.append(charge.circle)
 
   # Charge with infinite mass
-  addStationaryCharge: (x, y) ->
-    @charges.push(new Charge(x, y))
+  addStationaryCharge: (x, y, charge = 1) ->
+    charge = new Charge(x, y, charge, Infinity)
+    @charges.push(charge)
+    @toplayer.append(charge.circle)
     @_updateArrows()
-    circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    _.map {'cx':x, 'cy':y, 'r':10, 'fill':'red', 'stroke':'none'},
-      (v,k) -> circle.setAttribute(k, v)
-    @toplayer.append(circle)
 
   # Electron (for now)
   addPointCharge: (x, y) ->
-    electron = {x, y, vx:0, vy:0}
-    circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    _.map {'cx':electron.x, 'cy':electron.y, 'r':4, 'fill':'blue', 'stroke':'none'},
-      (v,k) -> circle.setAttribute(k, v)
-    @toplayer.append(circle)
+    electron = new Charge x, y, -1, 0.1
+    @charges.push(electron)
+    @toplayer.append(electron.circle)
+    _.map { 'r':4, 'fill':'blue' },
+      (v,k) -> electron.setAttribute(k, v)
 
-    electronInterval = setInterval( =>
-      Ex = 0
-      Ey = 0
-      _.each @charges, (charge) =>
-        dx = charge.x-electron.x
-        dy = (charge.y-electron.y)
-        de = 1/(Math.pow(dx, 2)+Math.pow(dy, 2))
-        Ex += de*dx
-        Ey += de*dy
-      magnitude = Math.sqrt(Math.pow(Ex, 2)+Math.pow(Ey, 2))*30
-      electron.vx += Ex*magnitude*.01
-      electron.vy += Ey*magnitude*.01
-      electron.x = electron.x+electron.vx*1000/40
-      electron.y = electron.y+electron.vy*1000/40
-      circle.setAttribute('cx', electron.x)
-      circle.setAttribute('cy', electron.y)
-    , 1000/40)
+  ####################
+  # Animation controls
+
+  play: ->
+    return if @interval
+    @interval = setInterval (=> @_tick()), 1000/40 # go for ~ 25 fps
+
+  stop: ->
+    clearInterval @interval
+    @interval = null
+
+
+  #################
+  # Private methods
 
   _tick: ->
+    try 
+      # a bit of meshing optimization might be needed later
+      _.each @charges, (c1, i) =>
+        return if c1.mass is Infinity
+        Fx = 0
+        Fy = 0
+        _.each @charges, (c2, j) =>
+          return if i is j
+          dx = c2.x-c1.x
+          dy = (c2.y-c1.y)
+          df = -(c1.charge*c2.charge)/(Math.pow(dx, 2)+Math.pow(dy, 2))
+          Fx += df*dx
+          Fy += df*dy
+        magnitude = Math.sqrt(Math.pow(Fx, 2)+Math.pow(Fy, 2))
+        c1.vx += Fx*magnitude/c1.mass
+        c1.vy += Fy*magnitude/c1.mass
+        c1.setx(c1.x+c1.vx*40/1000)
+        c1.sety(c1.y+c1.vy*40/1000)
+    catch error
+      throw error
+      @stop()
+    @_updateArrows()
 
   _updateArrows: ->
     _.each @arrows, (arrow) =>

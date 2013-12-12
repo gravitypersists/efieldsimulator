@@ -19,6 +19,7 @@ for i in [1..num]
 
 # add event listener to top interactive layer
 eField.toplayer.click (e) ->
+  eField.play()
   if e.shiftKey
     eField.addStationaryCharge(e.offsetX, e.offsetY)
   else
