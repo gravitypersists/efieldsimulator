@@ -15,8 +15,7 @@ class Arrow
     return @line
 
   setVector: (@angle) ->
-    a=@angle+180
-    @line.setAttribute "transform", "rotate(#{a}, #{@x}, #{@y})"
+    @line.setAttribute "transform", "rotate(#{@angle}, #{@x}, #{@y})"
     
   opacity: (opacity) ->
     @line.setAttribute "opacity", opacity
@@ -45,6 +44,18 @@ class Charge
 
   sety: (@y) ->
     @circle.setAttribute('cy', @y)
+
+  field: (x, y) ->
+    deltax = @x-x
+    deltay = @y-y
+    rsq = deltax*deltax+deltay*deltay
+    r = Math.sqrt rsq
+    magnitude = @charge/rsq
+    return {
+      i: deltax/r
+      j: deltay/r
+      magnitude: magnitude
+    }
 
 class EField
 
@@ -104,13 +115,25 @@ class EField
     _.map { 'r':4, 'fill':'blue' },
       (v,k) -> electron.setAttribute(k, v)
 
+  field: (x, y) ->
+    Ex = 0
+    Ey = 0
+    _.each @charges, (charge) =>
+      vector = charge.field x, y
+      Ex += vector.i*vector.magnitude
+      Ey += vector.j*vector.magnitude
+    return {
+      x: Ex
+      y: Ey
+    }
+
 
   ####################
   # Animation controls
 
-  play: ->
+  play: (speedFactor) ->
     return if @interval
-    @interval = setInterval (=> @_tick()), 1000/40 # go for ~ 25 fps
+    @interval = setInterval (=> @_tick(speedFactor)), 1000/40 # go for ~ 25 fps
 
   stop: ->
     clearInterval @interval
@@ -120,44 +143,36 @@ class EField
   #################
   # Private methods
 
-  _tick: ->
+  _tick: (speedFactor = 1) ->
+    speedFactor = speedFactor*30
     try 
-      # a bit of meshing optimization might be needed later
+      # a bit of meshing optimization might be needed later (calc e field at each grid point once)
+      # also calc each force just once, use second law!
       _.each @charges, (c1, i) =>
         return if c1.mass is Infinity
-        Fx = 0
-        Fy = 0
+        Ex = 0
+        Ey = 0
         _.each @charges, (c2, j) =>
           return if i is j
-          dx = c2.x-c1.x
-          dy = (c2.y-c1.y)
-          df = -(c1.charge*c2.charge)/(Math.pow(dx, 2)+Math.pow(dy, 2))
-          Fx += df*dx
-          Fy += df*dy
-        magnitude = Math.sqrt(Math.pow(Fx, 2)+Math.pow(Fy, 2))
-        c1.vx += Fx*magnitude/c1.mass
-        c1.vy += Fy*magnitude/c1.mass
-        c1.setx(c1.x+c1.vx*40/1000)
-        c1.sety(c1.y+c1.vy*40/1000)
+          vector = c2.field c1.x, c1.y
+          Ex += vector.i*vector.magnitude
+          Ey += vector.j*vector.magnitude
+        c1.vx += -c1.charge*Ex/c1.mass
+        c1.vy += -c1.charge*Ey/c1.mass
+        c1.setx(c1.x+c1.vx*40/1000*speedFactor)
+        c1.sety(c1.y+c1.vy*40/1000*speedFactor)
     catch error
-      throw error
       @stop()
+      throw error
     @_updateArrows()
 
   _updateArrows: ->
     _.each @arrows, (arrow) =>
-      Dx = 0
-      Dy = 0
-      _.each @charges, (charge) =>
-        dx = charge.x-arrow.x
-        dy = (charge.y-arrow.y)*(-1)
-        de = 1/(Math.pow(dx, 2)+Math.pow(dy, 2))
-        Dx += de*dx
-        Dy += de*dy
-      angle = Math.atan(Dx/Dy)*360/(2*Math.PI)
-      if Dy >= 0
-        angle += 180
-      magnitude = Math.sqrt(Math.pow(Dx, 2)+Math.pow(Dy, 2))*30
+      vector = @field arrow.x, arrow.y
+      angle = Math.atan(vector.x/-vector.y)*360/(2*Math.PI)
+      if vector.y >= 0
+       angle += 180
+      magnitude = Math.sqrt(vector.x*vector.x+vector.y*vector.y)*300
       arrow.setVector(angle)
       arrow.opacity magnitude
 

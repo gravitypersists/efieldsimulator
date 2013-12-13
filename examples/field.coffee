@@ -12,4 +12,4 @@ eField.addCharge new Charge 0.7*400, 0.6*300, -1
 eField.toplayer.click (e) ->
   eField.drawFieldArrow(e.offsetX, e.offsetY)
 
-eField.play()
+#eField.play()

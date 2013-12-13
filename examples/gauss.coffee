@@ -1,4 +1,3 @@
-
 # instantiate and render into div
 eField = new EField()
 eField.render($('#gauss'))
